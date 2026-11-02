@@ -98,6 +98,11 @@ local Modules = {
         Tab = VisualTab
     },
     {
+        Name = "Anti Void",
+        File = "AntiVoid",
+        Tab = UtilityTab
+    },
+    {
         Name = "X-Ray",
         File = "XRay",
         Tab = VisualTab
