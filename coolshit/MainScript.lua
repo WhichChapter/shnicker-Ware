@@ -63,6 +63,11 @@ local Modules = {
         Tab = BlatantTab
     },
     {
+        Name = "HitBox Extender",
+        File = "hitbox",
+        Tab = BlatantTab
+    },
+    {
         Name = "Fly",
         File = "Fly",
         Tab = PlayerTab
