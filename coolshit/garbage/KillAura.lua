@@ -21,8 +21,23 @@ return function(Shared)
 
     local connection
 
-    -- Remote setup for sword hitting matching your framework remotes
-    local SwordHitRemote = ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("SwordHit")
+    -- Safe remote fetcher to prevent loading failure if the path isn't instantly ready
+    local function getSwordHitRemote()
+        local success, remote = pcall(function()
+            return ReplicatedStorage:WaitForChild("rbxts_include", 2)
+                :WaitForChild("node_modules", 2)
+                :WaitForChild("@rbxts", 2)
+                :WaitForChild("net", 2)
+                :WaitForChild("out", 2)
+                :WaitForChild("_NetManaged", 2)
+                :WaitForChild("SwordHit", 2)
+        end)
+        if success and remote then
+            return remote
+        end
+        -- Fallback search just in case
+        return ReplicatedStorage:FindFirstChild("SwordHit", true)
+    end
 
     local function getCharacter()
         local character = plr.Character
@@ -87,6 +102,9 @@ return function(Shared)
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             if not rootPart then return end
 
+            local SwordHitRemote = getSwordHitRemote()
+            if not SwordHitRemote then return end
+
             for _, targetChar in ipairs(targets) do
                 local targetRoot = targetChar.PrimaryPart
                 if targetRoot then
@@ -98,7 +116,7 @@ return function(Shared)
                             rootPart.CFrame = CFrame.new(targetRoot.Position - targetRoot.CFrame.LookVector * 5 + Vector3.new(0, 0, 5))
                         end
 
-                        -- Fire hit payload via framework remote
+                        -- Fire hit payload via framework remote safely
                         if tool then
                             pcall(function()
                                 SwordHitRemote:FireServer({
