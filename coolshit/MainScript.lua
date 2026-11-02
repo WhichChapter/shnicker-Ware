@@ -57,6 +57,11 @@ local Modules = {
         File = "InfiniteJump",
         Tab = PlayerTab
     },
+     {
+        Name = "Kill Aura",
+        File = "KillAura",
+        Tab = BlatantTab
+    },
     {
         Name = "Fly",
         File = "Fly",
