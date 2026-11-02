@@ -63,6 +63,11 @@ local Modules = {
         Tab = BlatantTab
     },
     {
+        Name = "No Knockback",
+        File = "NoKnockback",
+        Tab = BlatantTab
+    },
+    {
         Name = "HitBox Extender",
         File = "hitbox",
         Tab = BlatantTab
