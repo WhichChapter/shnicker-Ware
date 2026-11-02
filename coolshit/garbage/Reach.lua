@@ -88,16 +88,15 @@ return function(Shared)
             overlap.FilterType = Enum.RaycastFilterType.Include
             overlap.FilterDescendantsInstances = targets
 
-            -- Expand the bounding box based on the slider range
-            local expansion = Vector3.new(state.range, state.range, state.range)
-            local parts = workspace:GetPartBoundsInBox(
-                part.CFrame,
-                part.Size + expansion,
+            -- Use a spherical radius search to easily detect players through walls from any angle
+            local parts = workspace:GetPartBoundsInRadius(
+                part.Position,
+                state.range,
                 overlap
             )
 
             for _, v in ipairs(parts) do
-                -- Ensure we don't fire touch interest on our own character
+                -- Ensure we don't fire touch interest on our own character parts
                 if v and v.Parent and not character:IsAncestorOf(v) then
                     if firetouchinterest then
                         firetouchinterest(part, v, 1)
@@ -124,7 +123,7 @@ return function(Shared)
 
     Tab:CreateSlider({
         Name = "Reach Range",
-        Range = {1, 20},
+        Range = {1, 50},
         Increment = 1,
         Suffix = " studs",
         CurrentValue = 1,
