@@ -33,6 +33,7 @@ local Window = Rayfield:CreateWindow({
 -- Tabs
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local VisualTab = Window:CreateTab("Visuals", 4483362458)
+local UtilityTab = Window:CreateTab("Utilities", 4483362458)
 
 -- Shared dependencies
 local Shared = {
@@ -43,7 +44,8 @@ local Shared = {
     Rayfield = Rayfield,
     Window = Window,
     PlayerTab = PlayerTab,
-    VisualTab = VisualTab
+    VisualTab = VisualTab,
+    UtilityTab = UtilityTab
 }
 
 -- Module registry
@@ -82,6 +84,21 @@ local Modules = {
         Name = "X-Ray",
         File = "XRay",
         Tab = VisualTab
+    },
+    {
+        Name = "FPS Counter",
+        File = "FPS",
+        Tab = UtilityTab
+    },
+    {
+        Name = "Ping Display",
+        File = "Ping",
+        Tab = UtilityTab
+    },
+    {
+        Name = "Keystrokes",
+        File = "Keystrokes",
+        Tab = UtilityTab
     }
 }
 
