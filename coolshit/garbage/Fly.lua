@@ -1,183 +1,178 @@
 
 --[[
     Shnicker Ware
-    MainScript.lua
-    GitHub Module Loader
+    Fly.lua
+    Requires MainScript.lua module loader
 ]]
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
+return function(Shared)
 
-local plr = Players.LocalPlayer
+    local Tab = Shared.PlayerTab
+    local UIS = Shared.UserInputService
+    local RunService = Shared.RunService
+    local Players = Shared.Players
+    local plr = Shared.LocalPlayer
+    local Rayfield = Shared.Rayfield
 
--- Configuration
-local BASE_URL =
-    "https://raw.githubusercontent.com/WhichChapter/shnicker-Ware/refs/heads/main/coolshit/garbage/"
-
--- Rayfield
-local Rayfield = loadstring(
-    game:HttpGet("https://sirius.menu/rayfield")
-)()
-
-local Window = Rayfield:CreateWindow({
-    Name = "Shnicker Ware",
-    LoadingTitle = "Shnicker Ware",
-    LoadingSubtitle = "Modular Edition",
-    ConfigurationSaving = {
-        Enabled = false
-    },
-    KeySystem = false
-})
-
--- Tabs
-local PlayerTab = Window:CreateTab("Player", 4483362458)
-local VisualTab = Window:CreateTab("Visuals", 4483362458)
-
--- Shared dependencies
-local Shared = {
-    Players = Players,
-    RunService = RunService,
-    UserInputService = UIS,
-    LocalPlayer = plr,
-    Rayfield = Rayfield,
-    Window = Window,
-    PlayerTab = PlayerTab,
-    VisualTab = VisualTab
-}
-
--- Module registry
-local Modules = {
-    {
-        Name = "Infinite Jump",
-        File = "InfiniteJump",
-        Tab = PlayerTab
-    },
-    {
-        Name = "Fly",
-        File = "Fly",
-        Tab = PlayerTab
-    },
-    {
-        Name = "Speed",
-        File = "Speed",
-        Tab = PlayerTab
-    },
-    {
-        Name = "China Hat",
-        File = "ChinaHat",
-        Tab = PlayerTab
-    },
-    {
-        Name = "Teleport",
-        File = "Teleport",
-        Tab = PlayerTab
-    },
-    {
-        Name = "Player ESP",
-        File = "ESP",
-        Tab = VisualTab
-    },
-    {
-        Name = "X-Ray",
-        File = "XRay",
-        Tab = VisualTab
+    local state = {
+        enabled = false,
+        speed = 60
     }
-}
 
--- Loading protection
-local LoadedModules = {}
+    local velocity
+    local gyro
+    local flyConnection
+    local characterConnection
 
-local function LoadModule(module)
-    if LoadedModules[module.File] then
-        return true
+    local function getCharacter()
+        local character = plr.Character
+        if not character then return end
+
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local root = character:FindFirstChild("HumanoidRootPart")
+
+        return character, humanoid, root
     end
 
-    local url = BASE_URL .. module.File .. ".lua"
+    local function cleanup()
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
 
-    local success, result = pcall(function()
-        local source = game:HttpGet(url)
+        if velocity then
+            velocity:Destroy()
+            velocity = nil
+        end
 
-        assert(
-            type(source) == "string" and #source > 0,
-            "Empty module source"
-        )
+        if gyro then
+            gyro:Destroy()
+            gyro = nil
+        end
 
-        local compiled, compileError = loadstring(source)
+        local _, humanoid = getCharacter()
 
-        assert(compiled, compileError)
-
-        local initialize = compiled()
-
-        assert(
-            type(initialize) == "function",
-            "Module must return an initialization function"
-        )
-
-        initialize(Shared)
-
-        LoadedModules[module.File] = true
-    end)
-
-    if success then
-        Rayfield:Notify({
-            Title = "Shnicker Ware",
-            Content = module.Name .. " loaded successfully",
-            Duration = 3
-        })
-
-        return true
-    else
-        warn("[Shnicker Ware] " .. module.File .. ": " .. tostring(result))
-
-        Rayfield:Notify({
-            Title = "Module Error",
-            Content = module.Name .. " failed to load",
-            Duration = 5
-        })
-
-        return false
-    end
-end
-
--- Load all modules
-PlayerTab:CreateButton({
-    Name = "Load All Player Modules",
-    Callback = function()
-        for _, module in ipairs(Modules) do
-            if module.Tab == PlayerTab then
-                LoadModule(module)
-            end
+        if humanoid then
+            humanoid.PlatformStand = false
         end
     end
-})
 
-VisualTab:CreateButton({
-    Name = "Load All Visual Modules",
-    Callback = function()
-        for _, module in ipairs(Modules) do
-            if module.Tab == VisualTab then
-                LoadModule(module)
-            end
-        end
+    local function stopFly()
+        state.enabled = false
+        cleanup()
     end
-})
 
--- Individual loading buttons
-for _, module in ipairs(Modules) do
-    module.Tab:CreateButton({
-        Name = "Load " .. module.Name,
-        Callback = function()
-            LoadModule(module)
+    local function startFly()
+        cleanup()
+
+        local _, humanoid, root = getCharacter()
+
+        if not humanoid or not root then
+            Rayfield:Notify({
+                Title = "Fly",
+                Content = "Character not ready",
+                Duration = 3
+            })
+            return
+        end
+
+        state.enabled = true
+        humanoid.PlatformStand = true
+
+        velocity = Instance.new("BodyVelocity")
+        velocity.MaxForce = Vector3.new(100000, 100000, 100000)
+        velocity.Velocity = Vector3.zero
+        velocity.Parent = root
+
+        gyro = Instance.new("BodyGyro")
+        gyro.MaxTorque = Vector3.new(100000, 100000, 100000)
+        gyro.P = 10000
+        gyro.CFrame = workspace.CurrentCamera.CFrame
+        gyro.Parent = root
+
+        flyConnection = RunService.RenderStepped:Connect(function()
+            if not state.enabled then return end
+            if not velocity or not gyro then return end
+
+            local camera = workspace.CurrentCamera
+            if not camera then return end
+
+            local movement = Vector3.zero
+
+            if UIS:IsKeyDown(Enum.KeyCode.W) then
+                movement += camera.CFrame.LookVector
+            end
+
+            if UIS:IsKeyDown(Enum.KeyCode.S) then
+                movement -= camera.CFrame.LookVector
+            end
+
+            if UIS:IsKeyDown(Enum.KeyCode.D) then
+                movement += camera.CFrame.RightVector
+            end
+
+            if UIS:IsKeyDown(Enum.KeyCode.A) then
+                movement -= camera.CFrame.RightVector
+            end
+
+            if UIS:IsKeyDown(Enum.KeyCode.E) then
+                movement += Vector3.yAxis
+            end
+
+            if UIS:IsKeyDown(Enum.KeyCode.Q) then
+                movement -= Vector3.yAxis
+            end
+
+            if movement.Magnitude > 0 then
+                velocity.Velocity = movement.Unit * state.speed
+            else
+                velocity.Velocity = Vector3.zero
+            end
+
+            gyro.CFrame = camera.CFrame
+        end)
+    end
+
+    -- Fly toggle
+    Tab:CreateToggle({
+        Name = "Fly",
+        CurrentValue = false,
+        Flag = "Fly",
+
+        Callback = function(value)
+            if value then
+                startFly()
+            else
+                stopFly()
+            end
         end
     })
+
+    -- Fly speed slider
+    Tab:CreateSlider({
+        Name = "Fly Speed",
+        Range = {20, 200},
+        Increment = 5,
+        Suffix = " studs/s",
+        CurrentValue = 60,
+        Flag = "FlySpeed",
+
+        Callback = function(value)
+            state.speed = value
+        end
+    })
+
+    -- Respawn handling
+    characterConnection = plr.CharacterAdded:Connect(function()
+        if state.enabled then
+            task.wait(0.5)
+
+            if state.enabled then
+                startFly()
+            end
+        end
+    end)
+
+    print("[Shnicker Ware] Fly module initialized")
+
 end
-
--- Status
-Rayfield:Notify({
-    Title = "Shnicker Ware",
-    Content = "Main interface loaded!",
-    Duration = 5
-})
-
-print("[Shnicker Ware] MainScript initialized")
