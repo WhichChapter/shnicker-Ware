@@ -114,6 +114,21 @@ local Modules = {
         Name = "Target Info (Mouseover)",
         File = "TargetInfo",
         Tab = UtilityTab
+    },
+    {
+        Name = "AutoJump",
+        File = "AutoJump",
+        Tab = PlayerTab
+    },
+    {
+        Name = "AutoLeave (Low Health)",
+        File = "AutoLeave",
+        Tab = PlayerTab
+    },
+    {
+        Name = "Report Player",
+        File = "AutoReport",
+        Tab = UtilityTab
     }
 }
 
