@@ -59,7 +59,7 @@ local Modules = {
     },
     {
         Name = "Kill Aura",
-        File = "KillAura",
+        File = "killaura",
         Tab = BlatantTab
     },
     {
