@@ -88,17 +88,21 @@ return function(Shared)
             overlap.FilterType = Enum.RaycastFilterType.Include
             overlap.FilterDescendantsInstances = targets
 
-            -- Get parts inside the bounding box modified by range
+            -- Expand the bounding box based on the slider range
+            local expansion = Vector3.new(state.range, state.range, state.range)
             local parts = workspace:GetPartBoundsInBox(
                 part.CFrame,
-                part.Size + Vector3.new(state.range, state.range, state.range),
+                part.Size + expansion,
                 overlap
             )
 
             for _, v in ipairs(parts) do
-                if firetouchinterest then
-                    firetouchinterest(part, v, 1)
-                    firetouchinterest(part, v, 0)
+                -- Ensure we don't fire touch interest on our own character
+                if v and v.Parent and not character:IsAncestorOf(v) then
+                    if firetouchinterest then
+                        firetouchinterest(part, v, 1)
+                        firetouchinterest(part, v, 0)
+                    end
                 end
             end
         end)
@@ -127,7 +131,6 @@ return function(Shared)
         Flag = "WowReachRange",
 
         Callback = function(value)
-            getCharacter() -- safety refresh
             state.range = value
         end
     })
