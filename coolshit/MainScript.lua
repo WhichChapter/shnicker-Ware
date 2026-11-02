@@ -99,6 +99,21 @@ local Modules = {
         Name = "Keystrokes",
         File = "Keystrokes",
         Tab = UtilityTab
+    },
+    {
+        Name = "Custom Crosshair",
+        File = "Crosshair",
+        Tab = UtilityTab
+    },
+    {
+        Name = "Combat Status HUD",
+        File = "CombatHUD",
+        Tab = UtilityTab
+    },
+    {
+        Name = "Target Info (Mouseover)",
+        File = "TargetInfo",
+        Tab = UtilityTab
     }
 }
 
