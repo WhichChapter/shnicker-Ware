@@ -63,7 +63,7 @@ local Modules = {
         Tab = PlayerTab
     },
     {
-        Name = "Blatant",
+        Name = "Reach",
         File = "Reach",
         Tab = BlatantTab
     },
