@@ -34,6 +34,7 @@ local Window = Rayfield:CreateWindow({
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local VisualTab = Window:CreateTab("Visuals", 4483362458)
 local UtilityTab = Window:CreateTab("Utilities", 4483362458)
+local BlatantTab = Window:CreateTab("Blatant", 4483362458)
 
 -- Shared dependencies
 local Shared = {
@@ -45,7 +46,8 @@ local Shared = {
     Window = Window,
     PlayerTab = PlayerTab,
     VisualTab = VisualTab,
-    UtilityTab = UtilityTab
+    UtilityTab = UtilityTab,
+    BlatantTab = BlatantTab
 }
 
 -- Module registry
@@ -59,6 +61,11 @@ local Modules = {
         Name = "Fly",
         File = "Fly",
         Tab = PlayerTab
+    },
+    {
+        Name = "Blatant",
+        File = "Reach",
+        Tab = BlatantTab
     },
     {
         Name = "Speed",
@@ -204,6 +211,17 @@ VisualTab:CreateButton({
     Callback = function()
         for _, module in ipairs(Modules) do
             if module.Tab == VisualTab then
+                LoadModule(module)
+            end
+        end
+    end
+})
+
+BlatantTab:CreateButton({
+    Name = "Load All Blatant Modules",
+    Callback = function()
+        for _, module in ipairs(Modules) do
+            if module.Tab == BlatantTab then
                 LoadModule(module)
             end
         end
