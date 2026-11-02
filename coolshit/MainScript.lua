@@ -93,6 +93,11 @@ local Modules = {
         Tab = VisualTab
     },
     {
+        Name = "Bed ESP",
+        File = "BedESP",
+        Tab = VisualTab
+    },
+    {
         Name = "FPS Counter",
         File = "FPS",
         Tab = UtilityTab
