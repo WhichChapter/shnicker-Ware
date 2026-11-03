@@ -470,6 +470,7 @@ local Modules = {
 	{ Name = "Reach", File = "Reach", Tab = BlatantTab },
 	{ Name = "Speed", File = "Speed", Tab = PlayerTab },
 	{ Name = "China Hat", File = "ChinaHat", Tab = PlayerTab },
+	{ Name = "Toxic", File = "AutoToxic", Tab = PlayerTab },
 	{ Name = "Teleport", File = "Teleport", Tab = PlayerTab },
 	{ Name = "Player ESP", File = "ESP", Tab = VisualTab },
 	{ Name = "Anti Void", File = "AntiVoid", Tab = UtilityTab },
