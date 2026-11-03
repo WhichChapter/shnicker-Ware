@@ -1,9 +1,9 @@
 --[[
-    Shnicker Ware - Vape-style GUI Modular Edition
+    Shnicker Ware - Vape-style GUI Modular Edition (Clean Native Integration)
 ]]
 
-local DISCORD_LINK = "https://discord.gg/YOURINVITE"
-local WEBSITE_LINK = "https://example.com"
+local DISCORD_LINK = "https://discord.gg/8fRwatznrc"
+local WEBSITE_LINK = "https://pornhub.com"
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,9 +12,6 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 
 local plr = Players.LocalPlayer
-
--- Configuration
-local BASE_URL = "https://raw.githubusercontent.com/WhichChapter/shnicker-Ware/refs/heads/main/coolshit/garbage/"
 
 ------------------------------------------------------------ assets
 local BASE = "Render/assets/"
@@ -109,7 +106,6 @@ make("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new
 local Blur = make("BlurEffect", {Size = 0}, Lighting)
 tw(Blur, 0.3, {Size = 12})
 
--- dragging
 local drag
 connect(UIS.InputChanged, function(i)
 	if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
@@ -141,7 +137,7 @@ local function copy(text, what)
 	Library:Notify(ok and "Copied" or "Couldn't copy", ok and (what .. " copied to clipboard") or "No setclipboard in your executor", 3, not ok)
 end
 
------------------------------------------------------------- category windows
+------------------------------------------------------------ Native Category & Module Construction
 function Library:CreateCategory(name, icon, pos)
 	local idx = #self.Windows
 	local cat = {Name = name, Modules = {}}
@@ -180,13 +176,16 @@ function Library:CreateCategory(name, icon, pos)
 		tw(arrow, 0.15, {Rotation = body.Visible and 0 or 180})
 	end)
 
-	function cat:CreateButton(text, callback)
+	function cat:CreateButton(optsOrText, callback)
+		local text = type(optsOrText) == "table" and (optsOrText.Name or optsOrText.Text) or optsOrText
+		local cb = type(optsOrText) == "table" and optsOrText.Callback or callback
+		
 		local b = make("TextButton", {BackgroundColor3 = C.off, BorderSizePixel = 0, Text = "", AutoButtonColor = false,
 			Size = UDim2.new(1, 0, 0, 36), LayoutOrder = #body:GetChildren()}, body)
 		label(b, text, UDim2.new(1, -24, 1, 0), UDim2.fromOffset(12, 0), C.dim)
 		b.MouseEnter:Connect(function() tw(b, 0.1, {BackgroundColor3 = C.hover}) end)
 		b.MouseLeave:Connect(function() tw(b, 0.1, {BackgroundColor3 = C.off}) end)
-		b.MouseButton1Click:Connect(function() if callback then task.spawn(callback) end end)
+		b.MouseButton1Click:Connect(function() if cb then task.spawn(cb) end end)
 		return b
 	end
 
@@ -229,7 +228,7 @@ function Library:CreateCategory(name, icon, pos)
 		arrowM.MouseButton1Click:Connect(toggleSettings)
 
 		function mod:CreateToggle(o)
-			local state = o.Default or false
+			local state = o.Default or o.CurrentValue or false
 			local r = make("TextButton", {BackgroundTransparency = 1, Text = "", Size = UDim2.new(1, 0, 0, 30),
 				LayoutOrder = #sFrame:GetChildren()}, sFrame)
 			label(r, o.Name, UDim2.new(1, -60, 1, 0), UDim2.fromOffset(14, 0), C.dim).TextSize = 13
@@ -246,12 +245,15 @@ function Library:CreateCategory(name, icon, pos)
 				if o.Callback then task.spawn(o.Callback, v) end
 			end
 			r.MouseButton1Click:Connect(function() set(not state) end)
+			if state and o.Callback then task.spawn(o.Callback, true) end
 			return {Set = set, Get = function() return state end}
 		end
 
 		function mod:CreateSlider(o)
-			local min, max, dec = o.Min or 0, o.Max or 100, o.Decimals or 0
-			local value = o.Default or min
+			local min = o.Min or (o.Range and o.Range[1]) or 0
+			local max = o.Max or (o.Range and o.Range[2]) or 100
+			local dec = o.Decimals or 0
+			local value = o.Default or o.CurrentValue or min
 			local r = make("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 42), LayoutOrder = #sFrame:GetChildren()}, sFrame)
 			label(r, o.Name, UDim2.new(1, -80, 0, 20), UDim2.fromOffset(14, 2), C.dim).TextSize = 13
 			local vl = label(r, "", UDim2.new(0, 60, 0, 20), UDim2.new(1, -74, 0, 2), C.text, Enum.TextXAlignment.Right)
@@ -281,12 +283,17 @@ function Library:CreateCategory(name, icon, pos)
 		end
 
 		function mod:CreateDropdown(o)
-			local opts2, i = o.Options, table.find(o.Options, o.Default) or 1
+			local opts2 = o.Options or {}
+			local def = o.Default or (o.CurrentOption and o.CurrentOption[1]) or opts2[1]
+			local i = 1
+			for idx, optVal in ipairs(opts2) do
+				if optVal == def then i = idx; break end
+			end
 			local r = make("TextButton", {BackgroundTransparency = 1, Text = "", Size = UDim2.new(1, 0, 0, 30),
 				LayoutOrder = #sFrame:GetChildren()}, sFrame)
 			local l = label(r, "", UDim2.new(1, -28, 1, 0), UDim2.fromOffset(14, 0), C.dim)
 			l.TextSize = 13
-			local function show() l.Text = o.Name .. ":  " .. opts2[i] end
+			local function show() l.Text = o.Name .. ":  " .. tostring(opts2[i]) end
 			show()
 			r.MouseButton1Click:Connect(function()
 				i = i % #opts2 + 1; show()
@@ -316,6 +323,17 @@ function Library:CreateCategory(name, icon, pos)
 		return mod
 	end
 
+	-- Direct Rayfield method mirrors on category tables so module scripts can call them natively
+	cat.CreateToggle = cat.CreateModule
+	cat.CreateSlider = function(self, o)
+		local targetMod = self.Modules[#self.Modules]
+		if targetMod then return targetMod:CreateSlider(o) end
+	end
+	cat.CreateDropdown = function(self, o)
+		local targetMod = self.Modules[#self.Modules]
+		if targetMod then return targetMod:CreateDropdown(o) end
+	end
+
 	table.insert(self.Windows, cat)
 	return cat
 end
@@ -335,7 +353,7 @@ function Library:CreateList(name, icon, pos, onChange)
 	local function render()
 		for _, c in ipairs(cat.Body:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
 		for n, v in ipairs(list) do
-			local b = make("TextButton", {BackgroundColor3 = C.off, BorderSizePixel = 0, Text = v .. "   (click to remove)",
+			local b = make("TextButton", {BackgroundColor3 = C.off, BorderSizePixel = 0, Text = v .. "    (click to remove)",
 				Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = C.dim, Size = UDim2.new(1, 0, 0, 28), LayoutOrder = n}, cat.Body)
 			b.MouseButton1Click:Connect(function() table.remove(list, table.find(list, v)); render(); if onChange then onChange(list) end end)
 		end
@@ -416,23 +434,31 @@ local PlayerTab  = Library:CreateCategory("Player",  asset("CombatIcon.png"))
 local BlatantTab = Library:CreateCategory("Blatant", asset("BlatantIcon.png"))
 local VisualTab  = Library:CreateCategory("Visuals", asset("RadarIcon1.png"))
 local UtilityTab = Library:CreateCategory("Utility", asset("UtilityIcon.png"))
+local WorldTab   = Library:CreateCategory("World",   asset("WorldIcon.png"))
 
 Library:CreateList("Friends", asset("FriendsIcon.png"))
 Library:CreateList("Targets", asset("TargetIcon.png"))
 local Settings   = Library:CreateCategory("Settings", asset("SettingsWheel1.png"))
 
------------------------------------------------------------- Module Registry & Auto-Loader
+------------------------------------------------------------ GitHub Loader
+local BASE_URL = "https://raw.githubusercontent.com/WhichChapter/shnicker-Ware/refs/heads/main/coolshit/garbage/"
+
 local Shared = {
 	Players = Players,
 	RunService = RunService,
 	UserInputService = UIS,
 	LocalPlayer = plr,
 	Library = Library,
-	Window = Library,
 	PlayerTab = PlayerTab,
+	BlatantTab = BlatantTab,
 	VisualTab = VisualTab,
 	UtilityTab = UtilityTab,
-	BlatantTab = BlatantTab
+	WorldTab = WorldTab,
+	Rayfield = {
+		Notify = function(self, data)
+			Library:Notify(data.Title or "Shnicker Ware", data.Content or "", data.Duration or 3)
+		end
+	}
 }
 
 local Modules = {
@@ -460,52 +486,31 @@ local Modules = {
 	{ Name = "Report Player", File = "AutoReport", Tab = UtilityTab }
 }
 
-local LoadedModules = {}
-
-local function LoadAndEnableModule(moduleData)
-	if LoadedModules[moduleData.File] then return end
-	
-	-- Create the UI toggle item under its respective category tab
-	local modUI = moduleData.Tab:CreateModule({
-		Name = moduleData.Name,
-		Callback = function(enabled)
-			-- This triggers when you toggle the module on/down in the UI
-		end
-	})
-
-	-- Fetch and execute module source from GitHub
+for _, moduleData in ipairs(Modules) do
 	task.spawn(function()
 		local url = BASE_URL .. moduleData.File .. ".lua"
 		local success, result = pcall(function()
 			local source = game:HttpGet(url)
-			assert(type(source) == "string" and #source > 0, "Empty module source")
+			assert(type(source) == "string" and #source > 0, "Empty source")
 			local compiled, compileError = loadstring(source)
 			assert(compiled, compileError)
 			local initialize = compiled()
-			assert(type(initialize) == "function", "Module must return an init function")
-			initialize(Shared)
-			LoadedModules[moduleData.File] = true
+			if type(initialize) == "function" then
+				Shared.CurrentTab = moduleData.Tab
+				initialize(Shared)
+			end
 		end)
 
-		if success then
-			-- Automatically turn the module ON immediately on load as requested
-			modUI:SetEnabled(true)
-		else
-			warn("[Shnicker Ware] Failed to load " .. moduleData.File .. ": " .. tostring(result))
+		if not success then
+			warn("[Shnicker Ware] Failed to load module " .. moduleData.File .. ": " .. tostring(result))
 		end
 	end)
-end
-
--- Automatically load and enable all modules on startup
-for _, mod in ipairs(Modules) do
-	LoadAndEnableModule(mod)
 end
 
 Settings:CreateButton("Copy Discord", function() copy(DISCORD_LINK, "Discord invite") end)
 Settings:CreateButton("Copy Website", function() copy(WEBSITE_LINK, "Website link") end)
 Settings:CreateButton("Uninject", function() Library:Destroy() end)
 
--- Startup splash
 local Splash = make("ImageLabel", {BackgroundTransparency = 1, Image = asset("rendericon2.png"), ScaleType = Enum.ScaleType.Fit,
 	AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(160, 160), ZIndex = 10}, Gui)
 task.delay(1.2, function()
@@ -513,5 +518,5 @@ task.delay(1.2, function()
 	task.delay(0.7, function() Splash:Destroy() end)
 end)
 
-Library:Notify("Shnicker Ware", "All modules loaded & enabled! Press RightShift to toggle.", 5)
+Library:Notify("Shnicker Ware", "Loaded cleanly! Press RightShift to toggle.", 5)
 return Library
