@@ -484,6 +484,7 @@ local Modules = {
 	{ Name = "AutoJump", File = "AutoJump", Tab = PlayerTab },
 	{ Name = "AutoLeave (Low Health)", File = "AutoLeave", Tab = PlayerTab },
 	{ Name = "Report Player", File = "AutoReport", Tab = UtilityTab }
+	{ Name = "God Mode", File = "GodMode", Tab = BlatantTab }
 }
 
 for _, moduleData in ipairs(Modules) do
